@@ -2,7 +2,8 @@
 
 import { useState, useCallback, useRef, useEffect } from "react";
 
-const DOSE_PRESETS = [100, 250, 500, 750, 1000, 1500];
+// Dose presets in mcg (displayed as mg)
+const DOSE_PRESETS_MCG = [100, 250, 500, 750, 1000, 1500, 2000, 2500, 5000];
 const STRENGTH_PRESETS = [1, 2, 5, 10, 15, 20, 50];
 const WATER_PRESETS = [0.5, 1, 1.5, 2, 2.5, 3];
 
@@ -74,10 +75,12 @@ export default function Calculator() {
     setWater(1);
   }, []);
 
+  const doseMg = dose / 1000;
+
   const handleCopy = useCallback(() => {
     const text = `YuNoWellness PH \u2014 Peptide Calculator Results
 \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
-Dose: ${dose} mcg
+Dose: ${doseMg} mg (${dose} mcg)
 Vial Strength: ${strength} mg
 BAC Water Added: ${water} mL
 \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
@@ -90,7 +93,7 @@ For educational purposes only. Not medical advice.`;
     navigator.clipboard.writeText(text);
     setToast(true);
     setTimeout(() => setToast(false), 2800);
-  }, [dose, strength, water, concentration, drawDisplay, volumeToInject, shotsPerVial]);
+  }, [dose, doseMg, strength, water, concentration, drawDisplay, volumeToInject, shotsPerVial]);
 
   // Build syringe ticks
   const [ticksBuilt, setTicksBuilt] = useState(false);
@@ -116,30 +119,33 @@ For educational purposes only. Not medical advice.`;
               <div className="flex justify-between items-center mb-2">
                 <div>
                   <span className="font-heading text-pink text-2xl font-bold">
-                    {dose}
+                    {dose / 1000}
                   </span>
                   <span className="text-text-muted text-[0.78rem] ml-1">
-                    mcg
+                    mg
+                  </span>
+                  <span className="text-text-muted text-[0.68rem] ml-2">
+                    ({dose.toLocaleString()} mcg)
                   </span>
                 </div>
                 <span className="text-text-muted text-[0.78rem]">
-                  micrograms
+                  milligrams
                 </span>
               </div>
               <input
                 type="range"
                 min={50}
-                max={2000}
+                max={10000}
                 step={50}
                 value={dose}
                 onChange={(e) => setDose(+e.target.value)}
                 className="w-full h-1.5 rounded-full appearance-none cursor-pointer accent-pink"
                 style={{
-                  background: `linear-gradient(90deg, var(--color-pink) ${((dose - 50) / 1950) * 100}%, var(--color-cream) ${((dose - 50) / 1950) * 100}%)`,
+                  background: `linear-gradient(90deg, var(--color-pink) ${((dose - 50) / 9950) * 100}%, var(--color-cream) ${((dose - 50) / 9950) * 100}%)`,
                 }}
               />
               <div className="flex justify-between mt-1.5">
-                {["50 mcg", "500", "1000", "1500", "2000 mcg"].map((t) => (
+                {["0.05 mg", "2.5", "5", "7.5", "10 mg"].map((t) => (
                   <span key={t} className="text-[0.68rem] text-text-muted">
                     {t}
                   </span>
@@ -147,15 +153,32 @@ For educational purposes only. Not medical advice.`;
               </div>
             </div>
             <div className="flex flex-wrap gap-2 mt-3.5">
-              {DOSE_PRESETS.map((d) => (
+              {DOSE_PRESETS_MCG.map((d) => (
                 <PillButton
                   key={d}
                   active={dose === d}
                   onClick={() => setDose(d)}
                 >
-                  {d} mcg
+                  {d >= 1000 ? `${d / 1000} mg` : `${d / 1000} mg`}
                 </PillButton>
               ))}
+            </div>
+            <div className="flex items-center gap-2.5 mt-3">
+              <span className="text-[0.82rem] text-text-muted whitespace-nowrap">
+                Custom:
+              </span>
+              <input
+                type="number"
+                placeholder="e.g. 0.3"
+                min={0.01}
+                step={0.01}
+                className="max-w-[140px] px-4 py-2.5 rounded-xl border-[1.5px] border-plum/12 bg-cream text-[0.9rem] text-text focus:border-pink focus:ring-2 focus:ring-pink/12 outline-none transition-all"
+                onChange={(e) => {
+                  const v = parseFloat(e.target.value);
+                  if (v > 0) setDose(Math.round(v * 1000));
+                }}
+              />
+              <span className="text-[0.82rem] text-text-muted">mg</span>
             </div>
           </div>
 
@@ -255,13 +278,13 @@ For educational purposes only. Not medical advice.`;
                   Your Dose
                 </p>
                 <p className="font-heading text-pink-light text-[1.6rem] leading-none">
-                  {dose}
+                  {doseMg}
                   <span className="text-[0.85rem] font-body font-normal opacity-70 ml-1">
-                    mcg
+                    mg
                   </span>
                 </p>
                 <p className="text-[0.72rem] text-white/40 mt-1">
-                  Amount of peptide per injection
+                  {dose.toLocaleString()} mcg per injection
                 </p>
               </div>
               <div className="bg-white/7 border border-white/10 rounded-2xl p-4">
@@ -395,7 +418,7 @@ For educational purposes only. Not medical advice.`;
                   </strong>{" "}
                   for a dose of{" "}
                   <strong className="text-pink-light">
-                    {dose.toLocaleString()} mcg
+                    {doseMg} mg ({dose.toLocaleString()} mcg)
                   </strong>
                   . Your solution has a concentration of{" "}
                   <strong className="text-pink-light">
@@ -558,7 +581,7 @@ For educational purposes only. Not medical advice.`;
                     {q.name}
                   </p>
                   <p className="text-[0.78rem] text-text-muted">
-                    {q.dose} mcg &middot; {q.strength}mg vial &middot;{" "}
+                    {q.dose / 1000} mg &middot; {q.strength}mg vial &middot;{" "}
                     {q.water}mL water
                   </p>
                 </div>
