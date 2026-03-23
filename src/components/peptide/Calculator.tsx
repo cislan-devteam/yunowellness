@@ -49,10 +49,11 @@ export default function Calculator() {
   const syringeRef = useRef<HTMLDivElement>(null);
 
   // Calculations
-  const concentration = (strength * 1000) / water;
-  const volumeToInject = dose / concentration;
+  const concentrationMcg = (strength * 1000) / water;
+  const concentration = strength / water; // mg/mL
+  const volumeToInject = dose / concentrationMcg;
   const unitsOnSyringe = volumeToInject * 100;
-  const shotsPerVial = Math.floor((strength * 1000) / dose);
+  const shotsPerVial = dose > 0 ? Math.floor((strength * 1000) / dose) : 0;
   const drawDisplay =
     unitsOnSyringe % 1 === 0
       ? unitsOnSyringe.toString()
@@ -84,7 +85,7 @@ Dose: ${doseMg} mg (${dose} mcg)
 Vial Strength: ${strength} mg
 BAC Water Added: ${water} mL
 \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
-Concentration: ${concentration.toLocaleString("en-US", { maximumFractionDigits: 0 })} mcg/mL
+Concentration: ${concentration % 1 === 0 ? concentration : concentration.toFixed(2)} mg/mL
 Draw Syringe To: ${drawDisplay} units
 Volume to Inject: ${volumeToInject.toFixed(3)} mL
 Doses per Vial: ~${shotsPerVial}
@@ -292,11 +293,11 @@ For educational purposes only. Not medical advice.`;
                   Concentration
                 </p>
                 <p className="font-heading text-white text-[1.6rem] leading-none">
-                  {concentration.toLocaleString("en-US", {
-                    maximumFractionDigits: 0,
-                  })}
+                  {concentration % 1 === 0
+                    ? concentration
+                    : concentration.toFixed(2)}
                   <span className="text-[0.85rem] font-body font-normal opacity-70 ml-1">
-                    mcg/mL
+                    mg/mL
                   </span>
                 </p>
                 <p className="text-[0.72rem] text-white/40 mt-1">
@@ -343,55 +344,89 @@ For educational purposes only. Not medical advice.`;
 
             {/* Syringe Visual */}
             <div className="relative z-10">
-              <p className="text-[0.72rem] uppercase tracking-[1.5px] text-white/45 font-semibold mb-3.5">
-                Syringe Fill Visual (100-unit insulin syringe)
+              <p className="text-[0.72rem] uppercase tracking-[1.5px] text-white/45 font-semibold mb-4">
+                100-Unit Insulin Syringe
               </p>
-              <div className="relative pt-5">
+
+              {/* Dose pointer */}
+              <div className="relative mb-1" style={{ marginLeft: "60px", marginRight: "40px" }}>
                 <div
-                  className="absolute -top-2 text-[0.65rem] text-white font-bold whitespace-nowrap bg-pink px-2 py-0.5 rounded-full shadow-[0_2px_8px_rgba(255,107,138,0.5)] transition-all duration-500"
+                  className="absolute -top-1 text-[0.65rem] text-white font-bold whitespace-nowrap bg-pink px-2.5 py-1 rounded-full shadow-[0_2px_10px_rgba(255,107,138,0.6)] transition-all duration-500 z-10"
                   style={{
-                    left: `${Math.min(Math.max(fillPct, 4), 96)}%`,
+                    left: `${Math.min(Math.max(fillPct, 2), 98)}%`,
                     transform: "translateX(-50%)",
                   }}
                 >
                   {drawDisplay} units
+                  <div className="absolute left-1/2 -bottom-1 w-2 h-2 bg-pink rotate-45 -translate-x-1/2" />
                 </div>
-                <div className="w-full h-12 bg-white/8 rounded-[10px] border-[1.5px] border-white/15 relative overflow-hidden flex items-center">
-                  <div
-                    className="h-full rounded-lg bg-gradient-to-r from-pink/50 to-pink/90 transition-all duration-500 relative"
-                    style={{ width: `${fillPct}%` }}
-                  >
-                    <div className="absolute right-0 top-0 bottom-0 w-[3px] bg-pink rounded-r shadow-[0_0_12px_rgba(255,107,138,0.8)]" />
+              </div>
+
+              {/* Syringe body */}
+              <div className="flex items-center mt-5">
+                {/* Needle */}
+                <div className="flex items-center shrink-0">
+                  {/* Needle tip (triangle) */}
+                  <div className="w-0 h-0 border-t-[3px] border-t-transparent border-b-[3px] border-b-transparent border-r-[10px] border-r-white/40" />
+                  {/* Needle shaft */}
+                  <div className="w-[28px] h-[2px] bg-gradient-to-r from-white/30 to-white/50" />
+                  {/* Needle hub */}
+                  <div className="w-[22px] h-[20px] bg-gradient-to-b from-white/25 to-white/15 rounded-[2px] border border-white/20 flex items-center justify-center">
+                    <div className="w-[2px] h-full bg-white/10" />
                   </div>
-                  {/* Tick marks */}
-                  {ticksBuilt &&
-                    [10, 20, 30, 40, 50, 60, 70, 80, 90].map((t) => (
-                      <div
-                        key={t}
-                        className="absolute bottom-1.5 w-px h-2 bg-white/20"
-                        style={{ left: `${t}%` }}
-                      />
-                    ))}
                 </div>
-                <div className="flex justify-between mt-1.5">
-                  {[
-                    "0",
-                    "10",
-                    "20",
-                    "30",
-                    "40",
-                    "50",
-                    "60",
-                    "70",
-                    "80",
-                    "90",
-                    "100 units",
-                  ].map((l) => (
-                    <span key={l} className="text-[0.65rem] text-white/30">
-                      {l}
-                    </span>
-                  ))}
+
+                {/* Barrel */}
+                <div className="flex-1 h-[52px] relative">
+                  {/* Barrel body */}
+                  <div className="absolute inset-0 bg-white/8 border-y-[2px] border-white/20 overflow-hidden">
+                    {/* Liquid fill */}
+                    <div
+                      className="absolute left-0 top-0 bottom-0 bg-gradient-to-r from-pink/30 via-pink/50 to-pink/70 transition-all duration-500"
+                      style={{ width: `${fillPct}%` }}
+                    >
+                      {/* Liquid surface shine */}
+                      <div className="absolute right-0 top-0 bottom-0 w-[3px] bg-pink shadow-[0_0_8px_rgba(255,107,138,0.8)]" />
+                      {/* Liquid highlight */}
+                      <div className="absolute inset-x-0 top-[3px] h-[6px] bg-gradient-to-b from-white/15 to-transparent" />
+                    </div>
+
+                    {/* Barrel highlight (glass effect) */}
+                    <div className="absolute inset-x-0 top-0 h-[8px] bg-gradient-to-b from-white/10 to-transparent" />
+                    <div className="absolute inset-x-0 bottom-0 h-[4px] bg-gradient-to-t from-white/5 to-transparent" />
+
+                    {/* Tick marks */}
+                    {ticksBuilt &&
+                      [10, 20, 30, 40, 50, 60, 70, 80, 90].map((t) => (
+                        <div key={t} className="absolute top-0 bottom-0 flex flex-col justify-between" style={{ left: `${t}%` }}>
+                          <div className={`w-px ${t === 50 ? "h-[14px] bg-white/35" : t % 20 === 0 ? "h-[10px] bg-white/25" : "h-[7px] bg-white/15"}`} />
+                          <div className={`w-px ${t === 50 ? "h-[14px] bg-white/35" : t % 20 === 0 ? "h-[10px] bg-white/25" : "h-[7px] bg-white/15"}`} />
+                        </div>
+                      ))}
+                  </div>
+
+                  {/* Barrel flanges (finger grips) at the end */}
+                  <div className="absolute -right-[2px] top-[-6px] bottom-[-6px] w-[4px] bg-white/20 rounded-r" />
                 </div>
+
+                {/* Plunger */}
+                <div className="flex items-center shrink-0">
+                  {/* Plunger stopper */}
+                  <div className="w-[8px] h-[48px] bg-gradient-to-r from-white/25 to-white/15 border border-white/20 rounded-[1px]" />
+                  {/* Plunger rod */}
+                  <div className="w-[24px] h-[6px] bg-gradient-to-b from-white/20 to-white/10 border-y border-white/15" />
+                  {/* Plunger thumb rest */}
+                  <div className="w-[6px] h-[22px] bg-gradient-to-r from-white/20 to-white/10 border border-white/15 rounded-r-sm" />
+                </div>
+              </div>
+
+              {/* Scale labels */}
+              <div className="flex justify-between mt-2" style={{ marginLeft: "60px", marginRight: "40px" }}>
+                {["0", "10", "20", "30", "40", "50", "60", "70", "80", "90", "100"].map((l) => (
+                  <span key={l} className="text-[0.6rem] text-white/30 w-0 text-center">
+                    {l}
+                  </span>
+                ))}
               </div>
             </div>
 
@@ -422,10 +457,10 @@ For educational purposes only. Not medical advice.`;
                   </strong>
                   . Your solution has a concentration of{" "}
                   <strong className="text-pink-light">
-                    {concentration.toLocaleString("en-US", {
-                      maximumFractionDigits: 0,
-                    })}{" "}
-                    mcg per mL
+                    {concentration % 1 === 0
+                      ? concentration
+                      : concentration.toFixed(2)}{" "}
+                    mg per mL
                   </strong>
                   . At this dose, your{" "}
                   <strong className="text-pink-light">
