@@ -23,6 +23,7 @@ export default function Nav() {
   const [user, setUser] = useState<{ email?: string } | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const mobileSearchRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
   const supabase = createSupabaseBrowser();
 
@@ -60,7 +61,11 @@ export default function Nav() {
 
   useEffect(() => {
     function handleClick(e: MouseEvent) {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+      const target = e.target as Node;
+      if (
+        dropdownRef.current && !dropdownRef.current.contains(target) &&
+        (!mobileSearchRef.current || !mobileSearchRef.current.contains(target))
+      ) {
         setSearchOpen(false);
         setQuery("");
         setResults([]);
@@ -203,7 +208,7 @@ export default function Nav() {
       {/* Mobile search overlay */}
       {searchOpen && (
         <div className="md:hidden fixed inset-0 z-[60] bg-black/40" onClick={() => { setSearchOpen(false); setQuery(""); setResults([]); }}>
-          <div className="mx-4 mt-[76px] bg-white rounded-2xl shadow-lg border border-plum/10 overflow-hidden" onClick={(e) => e.stopPropagation()}>
+          <div ref={mobileSearchRef} className="mx-4 mt-[76px] bg-white rounded-2xl shadow-lg border border-plum/10 overflow-hidden" onClick={(e) => e.stopPropagation()}>
             <div className="p-3 border-b border-cream">
               <input
                 ref={inputRef}

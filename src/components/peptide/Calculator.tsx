@@ -4,7 +4,7 @@ import { useState, useCallback, useRef, useEffect, useMemo } from "react";
 import { createSupabaseBrowser } from "@/lib/supabase-browser";
 import { trackCalculatorUse, trackCalculatorQuickfill, trackCalculatorCopy } from "@/lib/analytics";
 
-// Dose presets in mcg (displayed as mg)
+// Dose presets stored internally in mcg, displayed as mg
 const DOSE_PRESETS_MCG = [100, 250, 500, 750, 1000, 1500, 2000, 2500, 5000];
 const STRENGTH_PRESETS = [1, 2, 5, 10, 15, 20, 50];
 const WATER_PRESETS = [0.5, 1, 1.5, 2, 2.5, 3];
@@ -115,7 +115,7 @@ export default function Calculator() {
   const handleCopy = useCallback(() => {
     const text = `YuNoWellness PH \u2014 Peptide Calculator Results
 \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
-Dose: ${doseMg} mg (${dose} mcg)
+Dose: ${doseMg} mg
 Vial Strength: ${strength} mg
 BAC Water Added: ${water} mL
 \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
@@ -159,9 +159,6 @@ For educational purposes only. Not medical advice.`;
                   </span>
                   <span className="text-text-muted text-[0.78rem] ml-1">
                     mg
-                  </span>
-                  <span className="text-text-muted text-[0.68rem] ml-2">
-                    ({dose.toLocaleString()} mcg)
                   </span>
                 </div>
                 <span className="text-text-muted text-[0.78rem]">
@@ -320,7 +317,7 @@ For educational purposes only. Not medical advice.`;
                   </span>
                 </p>
                 <p className="text-[0.72rem] text-white/40 mt-1">
-                  {dose.toLocaleString()} mcg per injection
+                  {doseMg} mg per injection
                 </p>
               </div>
               <div className="bg-white/7 border border-white/10 rounded-2xl p-4">
@@ -488,7 +485,7 @@ For educational purposes only. Not medical advice.`;
                   </strong>{" "}
                   for a dose of{" "}
                   <strong className="text-pink-light">
-                    {doseMg} mg ({dose.toLocaleString()} mcg)
+                    {doseMg} mg
                   </strong>
                   . Your solution has a concentration of{" "}
                   <strong className="text-pink-light">
@@ -602,7 +599,7 @@ For educational purposes only. Not medical advice.`;
               <span className="text-pink-light font-bold not-italic">
                 Vial mg
               </span>{" "}
-              &times; 1000 &divide;{" "}
+              &divide;{" "}
               <span className="text-pink-light font-bold not-italic">
                 Water mL
               </span>
@@ -613,7 +610,7 @@ For educational purposes only. Not medical advice.`;
               </span>{" "}
               ={" "}
               <span className="text-pink-light font-bold not-italic">
-                Dose mcg
+                Dose mg
               </span>{" "}
               &divide;{" "}
               <span className="text-pink-light font-bold not-italic">
@@ -623,8 +620,8 @@ For educational purposes only. Not medical advice.`;
             </p>
           </div>
           <div className="bg-cream rounded-[10px] p-3 mt-3 text-[0.78rem] text-text-muted leading-relaxed">
-            <strong className="text-plum">Example:</strong> 5mg vial + 1mL
-            water = 5000 mcg/mL. For a 250 mcg dose: 250 &divide; 5000 &times;
+            <strong className="text-plum">Example:</strong> 5 mg vial + 1 mL
+            water = 5 mg/mL. For a 0.25 mg dose: 0.25 &divide; 5 &times;
             100 ={" "}
             <strong className="text-pink">5 units</strong>
           </div>
