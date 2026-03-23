@@ -1,22 +1,21 @@
 "use client";
 
-import { useState, useCallback, useRef, useEffect } from "react";
+import { useState, useCallback, useRef, useEffect, useMemo } from "react";
+import { createSupabaseBrowser } from "@/lib/supabase-browser";
 
 // Dose presets in mcg (displayed as mg)
 const DOSE_PRESETS_MCG = [100, 250, 500, 750, 1000, 1500, 2000, 2500, 5000];
 const STRENGTH_PRESETS = [1, 2, 5, 10, 15, 20, 50];
 const WATER_PRESETS = [0.5, 1, 1.5, 2, 2.5, 3];
 
-const QUICK_FILLS = [
-  { name: "BPC-157", dose: 250, strength: 5, water: 1 },
-  { name: "TB-500", dose: 500, strength: 10, water: 2 },
-  { name: "CJC-1295", dose: 300, strength: 5, water: 1 },
-  { name: "AOD-9604", dose: 250, strength: 5, water: 1 },
-  { name: "Epithalon", dose: 100, strength: 10, water: 2 },
-  { name: "Ipamorelin", dose: 200, strength: 5, water: 1 },
-  { name: "Semaglutide", dose: 250, strength: 5, water: 1 },
-  { name: "Tirzepatide", dose: 2500, strength: 10, water: 0.5 },
-];
+interface PeptideDose {
+  name: string;
+  slug: string;
+  dosing_cards: { level: string; amount: string; unit: string; recommended: boolean }[];
+  hero_stats: { label: string; value: string }[];
+  difficulty: string | null;
+  administration_route: string | null;
+}
 
 function PillButton({
   active,
@@ -46,7 +45,31 @@ export default function Calculator() {
   const [strength, setStrength] = useState(5);
   const [water, setWater] = useState(1);
   const [toast, setToast] = useState(false);
+  const [peptideSearch, setPeptideSearch] = useState("");
+  const [peptides, setPeptides] = useState<PeptideDose[]>([]);
+  const [peptidesLoaded, setPeptidesLoaded] = useState(false);
   const syringeRef = useRef<HTMLDivElement>(null);
+  const supabase = createSupabaseBrowser();
+
+  // Load all peptide dosing data once
+  useEffect(() => {
+    if (peptidesLoaded) return;
+    supabase
+      .from("peptides")
+      .select("name, slug, dosing_cards, hero_stats, difficulty, administration_route")
+      .eq("is_published", true)
+      .order("name")
+      .then(({ data }) => {
+        if (data) setPeptides(data as PeptideDose[]);
+        setPeptidesLoaded(true);
+      });
+  }, [peptidesLoaded, supabase]);
+
+  const filteredPeptides = useMemo(() => {
+    if (!peptideSearch.trim()) return peptides.slice(0, 8);
+    const q = peptideSearch.toLowerCase();
+    return peptides.filter((p) => p.name.toLowerCase().includes(q));
+  }, [peptides, peptideSearch]);
 
   // Calculations
   const concentrationMcg = (strength * 1000) / water;
@@ -595,37 +618,122 @@ For educational purposes only. Not medical advice.`;
           </div>
         </div>
 
-        {/* Quick Fill */}
+        {/* Starting Doses — Searchable */}
         <div className="bg-white rounded-2xl p-6 shadow-sm border border-plum/5">
           <h3 className="font-heading text-plum flex items-center gap-2 mb-3.5">
-            <span className="text-[1.2rem]">&#x1f48a;</span> Common Starting
-            Doses
+            <span className="text-[1.2rem]">&#x1f48a;</span> Starting Doses
           </h3>
-          <p className="text-[0.8rem] text-text-muted leading-relaxed mb-3.5">
-            Click any peptide to auto-fill its typical starting dose:
+          <p className="text-[0.8rem] text-text-muted leading-relaxed mb-3">
+            Search any peptide to see its starting dose and auto-fill the calculator:
           </p>
-          <div className="flex flex-col gap-2">
-            {QUICK_FILLS.map((q) => (
+
+          {/* Search input */}
+          <div className="relative mb-3">
+            <div className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted/40 pointer-events-none">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="11" cy="11" r="8" />
+                <path d="m21 21-4.3-4.3" />
+              </svg>
+            </div>
+            <input
+              type="text"
+              value={peptideSearch}
+              onChange={(e) => setPeptideSearch(e.target.value)}
+              placeholder="Search peptides..."
+              className="w-full pl-9 pr-3 py-2.5 rounded-xl bg-cream border border-plum/8 text-[0.85rem] text-text placeholder:text-text-muted/40 focus:border-pink focus:ring-2 focus:ring-pink/15 outline-none transition-all"
+            />
+            {peptideSearch && (
               <button
-                key={q.name}
-                onClick={() => handleQuickFill(q.dose, q.strength, q.water)}
-                className="group flex justify-between items-center px-3.5 py-2.5 rounded-xl bg-cream border border-transparent hover:bg-pink-pale hover:border-pink-light transition-all cursor-pointer text-left"
+                onClick={() => setPeptideSearch("")}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-pink transition-colors text-sm cursor-pointer"
               >
-                <div>
-                  <p className="text-[0.88rem] font-semibold text-plum">
-                    {q.name}
-                  </p>
-                  <p className="text-[0.78rem] text-text-muted">
-                    {q.dose / 1000} mg &middot; {q.strength}mg vial &middot;{" "}
-                    {q.water}mL water
-                  </p>
-                </div>
-                <span className="text-pink text-[0.8rem] opacity-0 group-hover:opacity-100 transition-opacity">
-                  &rarr;
-                </span>
+                &times;
               </button>
-            ))}
+            )}
           </div>
+
+          {/* Results count when searching */}
+          {peptideSearch && (
+            <p className="text-[0.72rem] text-text-muted mb-2">
+              {filteredPeptides.length} peptide{filteredPeptides.length !== 1 ? "s" : ""} found
+            </p>
+          )}
+
+          {/* Peptide list */}
+          <div className="flex flex-col gap-1.5 max-h-[420px] overflow-y-auto">
+            {filteredPeptides.map((p) => {
+              const startingCard = p.dosing_cards?.find(
+                (c) => c.level?.toLowerCase().includes("start") || c.level?.toLowerCase().includes("recommended")
+              ) || p.dosing_cards?.[0];
+
+              const doseStr = startingCard
+                ? `${startingCard.amount} ${startingCard.unit}`
+                : "See guide";
+
+              return (
+                <button
+                  key={p.slug}
+                  onClick={() => {
+                    // Try to parse dose from the starting card
+                    if (startingCard) {
+                      const amountStr = startingCard.amount.replace(/[^0-9.]/g, "");
+                      const amountNum = parseFloat(amountStr);
+                      if (amountNum > 0) {
+                        // Detect if amount is in mg or mcg based on unit text
+                        const unitLower = startingCard.unit.toLowerCase();
+                        if (unitLower.includes("mcg") || unitLower.includes("micro")) {
+                          setDose(Math.round(amountNum));
+                        } else if (unitLower.includes("mg") || unitLower.includes("milli")) {
+                          setDose(Math.round(amountNum * 1000));
+                        } else {
+                          // Default: assume mcg if small number, mg if larger context
+                          setDose(amountNum >= 50 ? Math.round(amountNum) : Math.round(amountNum * 1000));
+                        }
+                      }
+                    }
+                    setPeptideSearch("");
+                  }}
+                  className="group flex justify-between items-start px-3 py-2.5 rounded-xl bg-cream/60 border border-transparent hover:bg-pink-pale hover:border-pink-light transition-all cursor-pointer text-left"
+                >
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-1.5 mb-0.5">
+                      <p className="text-[0.85rem] font-semibold text-plum truncate">
+                        {p.name}
+                      </p>
+                      {p.difficulty && (
+                        <span className="text-[0.55rem] font-semibold text-sage bg-sage-pale px-1.5 py-0.5 rounded-full shrink-0">
+                          {p.difficulty}
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-[0.75rem] text-text-muted truncate">
+                      {doseStr}
+                    </p>
+                    {p.administration_route && (
+                      <p className="text-[0.65rem] text-text-muted/60 mt-0.5">
+                        {p.administration_route}
+                      </p>
+                    )}
+                  </div>
+                  <span className="text-pink text-[0.75rem] opacity-0 group-hover:opacity-100 transition-opacity mt-1 shrink-0 ml-2">
+                    Apply &rarr;
+                  </span>
+                </button>
+              );
+            })}
+
+            {filteredPeptides.length === 0 && (
+              <p className="text-[0.8rem] text-text-muted text-center py-4">
+                No peptides match &ldquo;{peptideSearch}&rdquo;
+              </p>
+            )}
+          </div>
+
+          {!peptideSearch && peptides.length > 8 && (
+            <p className="text-[0.7rem] text-text-muted/50 text-center mt-2">
+              Showing 8 of {peptides.length} &mdash; search to find more
+            </p>
+          )}
         </div>
 
         {/* BAC Water Info */}
