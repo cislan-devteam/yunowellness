@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createSupabaseBrowser } from "@/lib/supabase-browser";
+import { trackSearch } from "@/lib/analytics";
 
 interface SearchResult {
   slug: string;
@@ -90,6 +91,7 @@ export default function Nav() {
         .order("name")
         .limit(8);
       setResults(data || []);
+      trackSearch(query, "nav", (data || []).length);
       setLoading(false);
     }, 200);
     return () => clearTimeout(timeout);

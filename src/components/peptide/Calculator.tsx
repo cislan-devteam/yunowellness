@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useRef, useEffect, useMemo } from "react";
 import { createSupabaseBrowser } from "@/lib/supabase-browser";
+import { trackCalculatorUse, trackCalculatorQuickfill, trackCalculatorCopy } from "@/lib/analytics";
 
 // Dose presets in mcg (displayed as mg)
 const DOSE_PRESETS_MCG = [100, 250, 500, 750, 1000, 1500, 2000, 2500, 5000];
@@ -101,6 +102,16 @@ export default function Calculator() {
 
   const doseMg = dose / 1000;
 
+  // Track calculator usage (debounced)
+  const calcTimer = useRef<ReturnType<typeof setTimeout>>(null);
+  useEffect(() => {
+    if (calcTimer.current) clearTimeout(calcTimer.current);
+    calcTimer.current = setTimeout(() => {
+      trackCalculatorUse(doseMg, strength, water);
+    }, 1500);
+    return () => { if (calcTimer.current) clearTimeout(calcTimer.current); };
+  }, [doseMg, strength, water]);
+
   const handleCopy = useCallback(() => {
     const text = `YuNoWellness PH \u2014 Peptide Calculator Results
 \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
@@ -115,6 +126,7 @@ Doses per Vial: ~${shotsPerVial}
 \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 For educational purposes only. Not medical advice.`;
     navigator.clipboard.writeText(text);
+    trackCalculatorCopy();
     setToast(true);
     setTimeout(() => setToast(false), 2800);
   }, [dose, doseMg, strength, water, concentration, drawDisplay, volumeToInject, shotsPerVial]);
@@ -691,6 +703,7 @@ For educational purposes only. Not medical advice.`;
                         }
                       }
                     }
+                    trackCalculatorQuickfill(p.name, dose / 1000);
                     setPeptideSearch("");
                   }}
                   className="group flex justify-between items-start px-3 py-2.5 rounded-xl bg-cream/60 border border-transparent hover:bg-pink-pale hover:border-pink-light transition-all cursor-pointer text-left"

@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import Link from "next/link";
+import { trackSearch, trackFilterUsed } from "@/lib/analytics";
 
 interface PeptideCard {
   slug: string;
@@ -21,6 +22,7 @@ export default function PeptideLibrary({
   const [search, setSearch] = useState("");
   const [activeRoute, setActiveRoute] = useState<string | null>(null);
   const [activeDifficulty, setActiveDifficulty] = useState<string | null>(null);
+  const searchTimer = useRef<ReturnType<typeof setTimeout>>(null);
 
   const routes = useMemo(
     () =>
@@ -58,6 +60,16 @@ export default function PeptideLibrary({
 
     return result;
   }, [peptides, search, activeRoute, activeDifficulty]);
+
+  // Track search (debounced)
+  useEffect(() => {
+    if (!search.trim()) return;
+    if (searchTimer.current) clearTimeout(searchTimer.current);
+    searchTimer.current = setTimeout(() => {
+      trackSearch(search, "library", filtered.length);
+    }, 800);
+    return () => { if (searchTimer.current) clearTimeout(searchTimer.current); };
+  }, [search, filtered.length]);
 
   return (
     <>
@@ -110,7 +122,7 @@ export default function PeptideLibrary({
         {routes.map((r) => (
           <button
             key={r}
-            onClick={() => setActiveRoute(activeRoute === r ? null : r)}
+            onClick={() => { const next = activeRoute === r ? null : r; setActiveRoute(next); if (next) trackFilterUsed("route", next); }}
             className={`px-4 py-1.5 rounded-full text-sm font-semibold transition-colors cursor-pointer ${
               activeRoute === r
                 ? "bg-pink text-white"
@@ -128,9 +140,9 @@ export default function PeptideLibrary({
         {difficulties.map((d) => (
           <button
             key={d}
-            onClick={() =>
-              setActiveDifficulty(activeDifficulty === d ? null : d)
-            }
+            onClick={() => {
+              const next = activeDifficulty === d ? null : d; setActiveDifficulty(next); if (next) trackFilterUsed("difficulty", next);
+            }}
             className={`px-3 py-1 rounded-full text-xs font-semibold transition-colors cursor-pointer ${
               activeDifficulty === d
                 ? "bg-sage text-white"

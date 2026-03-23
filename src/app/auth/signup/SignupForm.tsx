@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { createSupabaseBrowser } from "@/lib/supabase-browser";
+import { trackSignupStart, trackSignupComplete, trackInviteCodeEntered } from "@/lib/analytics";
 
 export default function SignupPage() {
   const searchParams = useSearchParams();
@@ -18,8 +19,9 @@ export default function SignupPage() {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
 
-  // Pre-fill invite code from URL param
+  // Pre-fill invite code from URL param + track signup start
   useEffect(() => {
+    trackSignupStart();
     const code = searchParams.get("code");
     if (code) setInviteCode(code);
   }, [searchParams]);
@@ -45,6 +47,7 @@ export default function SignupPage() {
 
     // Validate invite code
     const codeValid = await validateInviteCode(inviteCode);
+    trackInviteCodeEntered(codeValid);
     if (!codeValid) {
       setError("Invalid or expired invite code. Contact us if you need access.");
       setLoading(false);
@@ -95,6 +98,7 @@ export default function SignupPage() {
       }
     }
 
+    trackSignupComplete("password");
     setSuccess(true);
     setLoading(false);
   }
@@ -136,6 +140,7 @@ export default function SignupPage() {
       return;
     }
 
+    trackSignupComplete("magic_link");
     setSuccess(true);
     setLoading(false);
   }

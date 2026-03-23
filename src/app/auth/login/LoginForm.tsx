@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { createSupabaseBrowser } from "@/lib/supabase-browser";
+import { trackLoginComplete } from "@/lib/analytics";
 
 export default function LoginForm() {
   const router = useRouter();
@@ -33,6 +34,7 @@ export default function LoginForm() {
       return;
     }
 
+    trackLoginComplete("password");
     const next = searchParams.get("next") ?? "/shop";
     router.push(next);
     router.refresh();
@@ -61,6 +63,7 @@ export default function LoginForm() {
       return;
     }
 
+    trackLoginComplete("magic_link");
     setMagicSent(true);
     setLoading(false);
   }

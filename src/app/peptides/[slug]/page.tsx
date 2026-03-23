@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import Nav from "@/components/layout/Nav";
 import Footer from "@/components/layout/Footer";
+import TrackPeptideView from "@/components/peptide/TrackPeptideView";
 import { supabase } from "@/lib/supabase";
 import type { Peptide, PeptideBenefit, PeptideSideEffect } from "@/types/database";
 
@@ -110,6 +111,7 @@ export default async function PeptidePage({ params }: { params: Promise<{ slug: 
   return (
     <>
       <Nav />
+      <TrackPeptideView name={p.name} slug={slug} />
 
       {/* Hero */}
       <div className="bg-gradient-to-br from-plum via-[#5C2E59] to-[#7A3A77] pt-[110px] pb-[60px] px-[5%] relative overflow-hidden">
