@@ -41,12 +41,23 @@ export default function PeptideLibrary({
 
     if (search.trim()) {
       const q = search.toLowerCase();
+      const qNorm = q.replace(/[-\s]/g, "");
       result = result.filter(
-        (p) =>
-          p.name.toLowerCase().includes(q) ||
-          (p.subtitle && p.subtitle.toLowerCase().includes(q)) ||
-          (p.hero_tags &&
-            p.hero_tags.some((t) => t.toLowerCase().includes(q)))
+        (p) => {
+          const name = p.name.toLowerCase();
+          const nameNorm = name.replace(/[-\s]/g, "");
+          const slug = p.slug.toLowerCase();
+          const slugNorm = slug.replace(/[-\s]/g, "");
+          return (
+            name.includes(q) ||
+            nameNorm.includes(qNorm) ||
+            slug.includes(q) ||
+            slugNorm.includes(qNorm) ||
+            (p.subtitle && p.subtitle.toLowerCase().includes(q)) ||
+            (p.hero_tags &&
+              p.hero_tags.some((t) => t.toLowerCase().includes(q)))
+          );
+        }
       );
     }
 

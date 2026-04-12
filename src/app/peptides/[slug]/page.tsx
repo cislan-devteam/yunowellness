@@ -222,9 +222,9 @@ export default async function PeptidePage({ params }: { params: Promise<{ slug: 
             )}
             <div className="space-y-3">
               {sideEffects.map((se) => (
-                <div key={se.id} className="bg-white rounded-2xl px-5 py-4 shadow-sm border border-plum/5 flex items-start gap-4">
+                <div key={se.id} className="bg-white rounded-2xl px-5 py-4 shadow-sm border border-plum/5 flex flex-wrap sm:flex-nowrap items-start gap-4">
                   <span className="text-[1.5rem] shrink-0 mt-0.5">{se.icon}</span>
-                  <div className="flex-1">
+                  <div className="min-w-0 flex-1">
                     <h4 className="font-semibold text-plum text-[0.92rem] mb-1">{se.name}</h4>
                     <p className="text-text-muted text-[0.83rem] leading-relaxed">{se.description}</p>
                   </div>

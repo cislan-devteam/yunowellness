@@ -24,6 +24,10 @@
 @source "../components/**/*.tsx";
 @source "../app/**/*.tsx";
 
+html, body {
+  overflow-x: hidden;
+}
+
 body {
   font-family: var(--font-body);
   background-color: var(--color-ivory);
